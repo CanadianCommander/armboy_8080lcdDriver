@@ -58,6 +58,7 @@ SECTIONS
   .got :
   {
     __got_start__ = .;
+    . = ALIGN(4);
     *(.got)
     __got_end__ = .;
   } > FLASH
@@ -65,6 +66,7 @@ SECTIONS
 	.data :
 	{
 		__data_start__ = .;
+    . = ALIGN(4);
 		*(vtable)
 		*(.data*)
 
@@ -99,6 +101,7 @@ SECTIONS
 	.bss :
 	{
 		__bss_start__ = .;
+    . = ALIGN(4);
 		*(.bss*)
 		*(COMMON)
 		__bss_end__ = .;

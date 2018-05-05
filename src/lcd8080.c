@@ -1,9 +1,14 @@
 #include "lcd8080.h"
 #include "config.h"
 #include "hardware/hardware.h"
+#include <stdio.h>
 
 /** LCD REGISTERS **/
+#define LCD_OSCILLATOR 0x0
+#define LCD_DRIVE_WAVEFORM 0x2
 #define LCD_DISPLAY_CONTROL 0x7
+#define LCD_SLEEP_MODE 0x10
+#define LCD_ENTRY_MODE 0x11
 /*******************/
 
 static volatile LCDConfig currentConfig;
@@ -124,8 +129,52 @@ static void readRegister(uint16_t reg, uint16_t * val){
 
 void initializeLCD(LCDConfig lcdConf){
   currentConfig = lcdConf;
+  powerOnLCD();
+}
+
+void initializeLCDDefault(){
+  //control
+  currentConfig.lcdDC = toPin(PIO_BANK_C,PIO_PC23);
+  currentConfig.lcdWR = toPin(PIO_BANK_C,PIO_PC24);
+  currentConfig.lcdRD = toPin(PIO_BANK_C,PIO_PC25);
+  currentConfig.lcdCS = toPin(PIO_BANK_C,PIO_PC26);
+  currentConfig.lcdRST = toPin(PIO_BANK_B,PIO_PB25);
+
+  //data
+  currentConfig.data1 = toPin(PIO_BANK_C,PIO_PC7);
+  currentConfig.data2 = toPin(PIO_BANK_C,PIO_PC9);
+  currentConfig.data3 = toPin(PIO_BANK_A,PIO_PA20);
+  currentConfig.data4 = toPin(PIO_BANK_C,PIO_PC4);
+  currentConfig.data5 = toPin(PIO_BANK_C,PIO_PC6);
+  currentConfig.data6 = toPin(PIO_BANK_C,PIO_PC8);
+  currentConfig.data7 = toPin(PIO_BANK_A,PIO_PA19);
+
+  currentConfig.data8 = toPin(PIO_BANK_C,PIO_PC16);
+  currentConfig.data10 = toPin(PIO_BANK_C,PIO_PC12);
+  currentConfig.data11 = toPin(PIO_BANK_B,PIO_PB14);
+  currentConfig.data12 = toPin(PIO_BANK_C,PIO_PC17);
+  currentConfig.data13 = toPin(PIO_BANK_C,PIO_PC15);
+  currentConfig.data14 = toPin(PIO_BANK_C,PIO_PC13);
+  currentConfig.data15 = toPin(PIO_BANK_B,PIO_PB21);
+
+  enableAllIOBanks();
+  enablePin(PIO_BANK_C, PIO_PC23 | PIO_PC24 | PIO_PC25 | PIO_PC26 | PIO_PC7  |
+                        PIO_PC29 | PIO_PC4  | PIO_PC6  | PIO_PC8  | PIO_PC16 |
+                        PIO_PC12 | PIO_PC17 | PIO_PC15 | PIO_PC13, PIO_OUT);
+  enablePin(PIO_BANK_A, PIO_PA20 | PIO_PA19, PIO_OUT);
+  enablePin(PIO_BANK_B, PIO_PB25 | PIO_PB14 | PIO_PB21, PIO_OUT);
+
+  powerOnLCD();
 }
 
 void powerOnLCD(){
-
+  //carry out the power on sequence as described in SSD1289 documentation (page 71)
+  writeRegister(LCD_DISPLAY_CONTROL, 0x21);
+  writeRegister(LCD_OSCILLATOR, 0x1);
+  writeRegister(LCD_DISPLAY_CONTROL, 0x23);
+  writeRegister(LCD_SLEEP_MODE, 0x0);
+  sleep(30);
+  writeRegister(LCD_DISPLAY_CONTROL, 0x33);
+  writeRegister(LCD_ENTRY_MODE, 0x6000);
+  writeRegister(LCD_DRIVE_WAVEFORM, 0x0);
 }

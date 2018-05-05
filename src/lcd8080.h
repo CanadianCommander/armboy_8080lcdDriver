@@ -38,9 +38,10 @@ typedef struct {
 } LCDConfig;
 
 /**
-  configuer lcd for use & clear to black. CALL FIRST 
+  configuer lcd for use & clear to black. CALL FIRST
 */
 void initializeLCD(LCDConfig lcdConf);
+void initializeLCDDefault();
 
 /**
   power up the LCD controller

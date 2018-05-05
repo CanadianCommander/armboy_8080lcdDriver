@@ -22,7 +22,7 @@ __binary_layout:
 __jump_vector:
 
 	/* jump vectors. replace Default_Handler with you handler as required*/
-  .long Default_Handler // 0
+  .long initializeLCDDefault // 0
   .long Default_Handler
   .long Default_Handler
   .long Default_Handler
@@ -97,5 +97,5 @@ Default_Handler:
 
   .section .module_name
 __module_name:
-  padded_string "example module", 60 @ module name
-  .long 0x00000001 @ module ID
+  padded_string "lcd driver", 60 @ module name
+  .long 0x00000042 @ module ID
