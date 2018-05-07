@@ -11,29 +11,22 @@ typedef struct {
   // note F_CS is NC
   Pin lcdRST;
 
-  //blue
-  //note data0 is no connect
+  Pin data0;
   Pin data1;
   Pin data2;
   Pin data3;
   Pin data4;
   Pin data5;
-
-  //green
   Pin data6;
   Pin data7;
   Pin data8;
-  // data9 is no connect
+  Pin data9;
   Pin data10;
   Pin data11;
   Pin data12;
-
-  //red
   Pin data13;
   Pin data14;
   Pin data15;
-  Pin data16;
-  Pin data17;
 
 } LCDConfig;
 
