@@ -1,6 +1,7 @@
 #ifndef LCD8080_H_
 #define LCD8080_H_
-#include "util/misc.h"
+#include "config.h"
+#include "hardware/hardware.h"
 
 typedef struct {
   Pin lcdDC;
@@ -30,6 +31,9 @@ typedef struct {
 
 } LCDConfig;
 
+#define SSD1289_WIDTH 320
+#define SSD1289_HIGHT 240
+
 /**
   configuer lcd for use & clear to black. CALL FIRST
 */
@@ -40,5 +44,10 @@ void initializeLCDDefault();
   power up the LCD controller
 */
 void powerOnLCD();
+
+/**
+  clear the entire display to the given color
+*/
+void clearDisplay(uint16_t color);
 
 #endif /*LCD8080_H_*/

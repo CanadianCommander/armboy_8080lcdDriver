@@ -1,6 +1,4 @@
 #include "lcd8080.h"
-#include "config.h"
-#include "hardware/hardware.h"
 #include <stdio.h>
 
 /** LCD REGISTERS **/
@@ -12,6 +10,7 @@
 #define LCD_POWER_CONTROL_2 0xC
 #define LCD_SLEEP_MODE 0x10
 #define LCD_ENTRY_MODE 0x11
+#define LCD_DISPLAY_DATA 0x22
 #define LCD_FRAME_FREQ 0x25
 /*******************/
 
@@ -24,6 +23,26 @@ static uint16_t prevData =0;
 
 //normal set pin has way to much branching. NEED SPEED!
 #define SET_PIN_FAST(p,l) *(p.setReg + (0x1 & ~l)) |= p.pin
+
+inline static void changeDataPinDirection(uint8_t dir){
+  setPinDirection(currentConfig.data0.bank,currentConfig.data0.pin,dir);
+  setPinDirection(currentConfig.data1.bank,currentConfig.data1.pin,dir);
+  setPinDirection(currentConfig.data2.bank,currentConfig.data2.pin,dir);
+  setPinDirection(currentConfig.data3.bank,currentConfig.data3.pin,dir);
+  setPinDirection(currentConfig.data4.bank,currentConfig.data4.pin,dir);
+  setPinDirection(currentConfig.data5.bank,currentConfig.data5.pin,dir);
+  setPinDirection(currentConfig.data6.bank,currentConfig.data6.pin,dir);
+  setPinDirection(currentConfig.data7.bank,currentConfig.data7.pin,dir);
+
+  setPinDirection(currentConfig.data8.bank,currentConfig.data8.pin,dir);
+  setPinDirection(currentConfig.data9.bank,currentConfig.data9.pin,dir);
+  setPinDirection(currentConfig.data10.bank,currentConfig.data10.pin,dir);
+  setPinDirection(currentConfig.data11.bank,currentConfig.data11.pin,dir);
+  setPinDirection(currentConfig.data12.bank,currentConfig.data12.pin,dir);
+  setPinDirection(currentConfig.data13.bank,currentConfig.data13.pin,dir);
+  setPinDirection(currentConfig.data14.bank,currentConfig.data14.pin,dir);
+  setPinDirection(currentConfig.data15.bank,currentConfig.data15.pin,dir);
+}
 
 // data order 1 -> 17 (ignoring nc pins). LOW 16 bits
 inline static void setRawData(uint16_t data){
@@ -110,35 +129,13 @@ inline static void writeCmd(uint16_t data, uint8_t param){
   setRaw(NOP_CONTROL_PINS,0x0);
 }
 
-#define READ_CONTROL_PINS_REG 0x4 // RST, WR high
-inline static void readCmd(uint16_t * data, uint8_t param){
-  setRaw(READ_CONTROL_PINS_REG | param,0x0);
-  strobe(currentConfig.lcdRD);
-  strobe(currentConfig.lcdRD);
-  getRawData(data);
-  setRaw(NOP_CONTROL_PINS,0x0);
-}
-
 
 #define WRITE_CONTROL_PINS_LCD 0x5 // RST , RD , DC high
 inline static void prepDisplayForWrite(){
+  writeCmd(LCD_DISPLAY_DATA,0);
   setRawControl(WRITE_CONTROL_PINS_LCD);
 }
 
-inline static void writeDisplay(uint16_t data){
-  setRawData(data);
-  strobe(currentConfig.lcdWR);
-}
-
-#define READ_CONTROL_PINS_LCD 0x5 // RST, WR, DC high
-inline static void readDisplay(uint16_t * data){
-  setRaw(READ_CONTROL_PINS_LCD,0x0);
-  SET_PIN(currentConfig.lcdRD,0);
-  nanoSleep(1000);//data access time
-  getRawData(data);
-  SET_PIN(currentConfig.lcdRD,1);
-  setRaw(NOP_CONTROL_PINS,0x0);
-}
 /*******************************************************/
 /******* END OF THE BIG BLOCK OF IO ABSTRACTION ********/
 /*******************************************************/
@@ -149,28 +146,23 @@ inline static void writeRegister(uint16_t reg, uint16_t val){
   writeCmd(val,1);// write new value
 }
 
-inline static void readRegister(uint16_t reg, uint16_t * val){
-  uint16_t d;
-  setRaw(0x4,reg);
-  strobe(currentConfig.lcdWR);
-  setRaw(0x5,0x0);
+inline static void writeDisplay(uint16_t data){
+  SET_PIN_FAST(currentConfig.lcdWR,0);
+  setRawData(data);
+  SET_PIN_FAST(currentConfig.lcdWR,1);
+}
+
+inline static void skipPixel(){
+  strobe(currentConfig.lcdRD);
+}
+
+inline static void readDisplay(uint16_t * data){
+  changeDataPinDirection(PIO_IN);
   SET_PIN(currentConfig.lcdRD,0);
-  nanoSleep(1000);
-  getRawData(&d);
+  nanoSleep(250);//data access time
+  getRawData(data);
   SET_PIN(currentConfig.lcdRD,1);
-  printf("d is: %x \n",d);
-  SET_PIN(currentConfig.lcdRD,0);
-  nanoSleep(1000);
-  getRawData(&d);
-  SET_PIN(currentConfig.lcdRD,1);
-  printf("d is: %x \n",d);
-  SET_PIN(currentConfig.lcdRD,0);
-  nanoSleep(1000);
-  getRawData(&d);
-  SET_PIN(currentConfig.lcdRD,1);
-  printf("d is: %x \n",d);
-  //writeCmd(reg,0); // sel reg
-  //readCmd(val,1);// read
+  changeDataPinDirection(PIO_OUT);
 }
 
 void initializeLCD(LCDConfig lcdConf){
@@ -216,9 +208,11 @@ void initializeLCDDefault(){
 }
 
 void powerOnLCD(){
+  //set WR and RD to off
   SET_PIN(currentConfig.lcdWR,1);
   SET_PIN(currentConfig.lcdRD,1);
 
+  //reset display
   SET_PIN(currentConfig.lcdRST,0);
   sleep(1);
   SET_PIN(currentConfig.lcdRST,1);
@@ -233,55 +227,19 @@ void powerOnLCD(){
   writeRegister(LCD_ENTRY_MODE, 0x6000);
   writeRegister(LCD_DRIVE_WAVEFORM, 0x1000);
 
-  //landscape ???
+  //change to landscape view
   writeRegister(LCD_DRIVER_OUT_C,0x293F);
   writeRegister(LCD_ENTRY_MODE,0x6038);
 
-  uint32_t cTime;
-  uint32_t t2;
-  uint32_t center =1;
-  uint32_t mov = 10;
-  uint32_t radii = 25;
-  int dx;
-  int dy,dy2,dy3;
-  writeCmd(0x22,0);
+  //clear screen
+  clearDisplay(0x0);
+}
+
+void clearDisplay(uint16_t color){
   prepDisplayForWrite();
-  for(int z =0; z < 20000; z++){
-    if(center >= 320 || center <= 0){
-      mov = -mov;
-    }
-    center += mov;
-    cTime = getTime();
-    for(int y =0; y<240;y++){
-      for(int x=0; x < 320; x+=2){
-        dx = x - center;
-        dy = y - 120;
-        dy2 = y - 40;
-        dy3 = y - 200;
-        if((dx*dx + dy*dy)/10 < radii){
-          writeDisplay(0xF800);
-          writeDisplay(0xF800);
-        }
-        else if((dx*dx + dy2*dy2)/10 < radii){
-          writeDisplay(0x001F);
-          writeDisplay(0x001F);
-        }
-        else if((dx*dx + dy3*dy3)/10 < radii){
-          writeDisplay(0x7E0);
-          writeDisplay(0x7E0);
-        }
-        else {
-          writeDisplay(0x0000);
-          writeDisplay(0x0000);
-        }
-      }
-    }
-    if(z % 300 == 0){
-      t2 = getTime() - cTime;
-      printf("Frame Time: %dms\n",t2);
+  for(int y = 0; y < SSD1289_HIGHT; y ++){
+    for(int x = 0; x < SSD1289_WIDTH; x ++){
+      writeDisplay(color);
     }
   }
-
-  uint16_t d;
-  readRegister(0x0, &d);
 }
