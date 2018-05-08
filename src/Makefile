@@ -3,12 +3,12 @@ CFLAGS = --std=gnu11 -Ofast -nostdlib -mlong-calls -fPIC -mno-pic-data-is-text-r
 OBYCP = arm-none-eabi-objcopy
 
 INCLUDE = -I ../armboy-kernel/src/ -I ../../../tools/ATMEL -I ../../../tools/CMSIS/include
-CFILES = lcd8080.c
+CFILES = ssd1289.c
 
 test.bin : $(CFILES) kmod.S
-	$(CC) $(CFLAGS) -o lcd8080.elf $(CFILES) kmod.S $(INCLUDE)
-	$(OBYCP) -O binary lcd8080.elf lcd8080.bin
+	$(CC) $(CFLAGS) -o ssd1289.elf $(CFILES) kmod.S $(INCLUDE)
+	$(OBYCP) -O binary ssd1289.elf ssd1289.bin
 
 upload: test.bin
 	python3 ../tool/deleteAll.py
-	../tool/abFlasher.a lcd8080.bin /dev/cu.usbmodem14121
+	../tool/abFlasher.a ssd1289.bin /dev/cu.usbmodem14121

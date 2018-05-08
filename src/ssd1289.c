@@ -1,4 +1,4 @@
-#include "lcd8080.h"
+#include "ssd1289.h"
 #include <stdio.h>
 
 /** LCD REGISTERS **/
