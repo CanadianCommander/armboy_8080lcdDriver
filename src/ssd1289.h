@@ -31,8 +31,15 @@ typedef struct {
 
 } LCDConfig;
 
+typedef struct {
+  uint16_t w, h;
+  uint16_t * rgb;
+} Bitmap;
+
+
 #define SSD1289_WIDTH 320
 #define SSD1289_HIGHT 240
+#define TRANSPARENT_COLOR 0xFFFF
 
 /**
   configuer lcd for use & clear to black. CALL FIRST
@@ -49,5 +56,12 @@ void powerOnLCD();
   clear the entire display to the given color
 */
 void clearDisplay(uint16_t color);
+
+
+/**
+  draw bitmap at the given coordinates
+*/
+void drawBitmap(Bitmap * b, uint16_t x, uint16_t y);
+
 
 #endif /*LCD8080_H_*/

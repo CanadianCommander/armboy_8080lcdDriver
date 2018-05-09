@@ -12,6 +12,11 @@
 #define LCD_ENTRY_MODE 0x11
 #define LCD_DISPLAY_DATA 0x22
 #define LCD_FRAME_FREQ 0x25
+#define LCD_HORZ_RAM_ADDR 0x44
+#define LCD_VERT_RAM_START_ADDR 0x45
+#define LCD_VERT_RAM_END_ADDR 0x46
+#define LCD_RAM_ADDR_X 0x4E
+#define LCD_RAM_ADDR_Y 0x4F
 /*******************/
 
 static LCDConfig currentConfig;
@@ -165,6 +170,23 @@ inline static void readDisplay(uint16_t * data){
   changeDataPinDirection(PIO_OUT);
 }
 
+inline static void setWindow(uint16_t x, uint16_t y, uint16_t w, uint16_t h){
+  writeRegister(LCD_RAM_ADDR_X,x);
+  writeRegister(LCD_RAM_ADDR_Y,y);
+  writeRegister(LCD_HORZ_RAM_ADDR,(0xFF00 & ((y+h - 1)<<8)) | (0x00FF & (y)));
+  writeRegister(LCD_VERT_RAM_START_ADDR,0x01FF & (x));
+  writeRegister(LCD_VERT_RAM_END_ADDR, 0x01FF & (x + w - 1));
+}
+
+inline static void setWindowDefault(){
+  //POR values from SSD1289 data sheet
+  writeRegister(LCD_RAM_ADDR_X,0x0);
+  writeRegister(LCD_RAM_ADDR_Y,0x0);
+  writeRegister(LCD_HORZ_RAM_ADDR, 0xEF00);
+  writeRegister(LCD_VERT_RAM_START_ADDR,0x0);
+  writeRegister(LCD_VERT_RAM_END_ADDR, 0x13F);
+}
+
 void initializeLCD(LCDConfig lcdConf){
   currentConfig = lcdConf;
   powerOnLCD();
@@ -242,4 +264,16 @@ void clearDisplay(uint16_t color){
       writeDisplay(color);
     }
   }
+}
+
+
+void drawBitmap(Bitmap * b, uint16_t x, uint16_t y){
+  setWindow(x,y,b->w,b->h);
+  prepDisplayForWrite();
+
+  for(uint16_t i =0; i < (b->w*b->h); i++){
+    writeDisplay(b->rgb[i]);
+  }
+
+  setWindowDefault();
 }
