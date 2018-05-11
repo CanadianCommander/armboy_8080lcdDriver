@@ -266,17 +266,31 @@ void clearDisplay(uint16_t color){
   }
 }
 
-void __drawBitmap(Bitmap * b, uint16_t x, uint16_t y, uint16_t scale);
-void drawBitmap(Bitmap * b, uint16_t x, uint16_t y){
+//bitmap helper functions
+void __drawBitmap(Bitmap * b, int xI, int yI, float scale);
+void __drawBitmapL(Bitmap * b, int xI, int yI, float scale);
+
+void drawBitmap(Bitmap * b, int x, int y){
   __drawBitmap(b,x,y,1);
 }
 
-void drawBitmapScale(Bitmap * b, uint16_t x, uint16_t y, uint16_t scale){
+void drawBitmapNNScale(Bitmap * b, int x, int y, float scale){
   __drawBitmap(b,x,y,scale);
 }
 
+void drawBitmapLScale(Bitmap * b, int x, int y, float scale){
+  __drawBitmapL(b,x,y,scale);
+}
 
-void __drawBitmap(Bitmap * b, uint16_t x, uint16_t y, uint16_t scale){
+void __drawBitmapL(Bitmap * b, int xI, int yI, float scale){
+  uint16_t xOffset =0;
+  uint16_t yOffset =0;
+  if(xI < 0){
+    xOffset = -xI;
+  }
+  if(yI < 0){
+    yOffset = -yI;
+  }
 
   uint16_t scaleWidth = b->w*scale;
   uint16_t scaleHight = b->h*scale;
@@ -288,12 +302,70 @@ void __drawBitmap(Bitmap * b, uint16_t x, uint16_t y, uint16_t scale){
     scaleHight = SSD1289_HEIGHT;
   }
 
-  setWindow(x,y,scaleWidth,scaleHight);
-
+  setWindow(xI + xOffset,yI + yOffset,scaleWidth - xOffset,scaleHight - yOffset);
   prepDisplayForWrite();
-  for(uint16_t y =0; y < scaleHight; y ++){
-    for(uint16_t x = 0; x < scaleWidth; x ++){
-      writeDisplay(b->rgb[((y/scale)*b->w) + x/scale]);
+
+  for(float y =yOffset; y < scaleHight; y ++){
+    for(float x = xOffset; x < scaleWidth; x ++){
+      float diffY = y/scale - (int)(y/scale);
+
+      float diffX = ((int)(y/scale)*b->w) + x/scale - (int)(((int)(y/scale)*b->w) + x/scale);
+      uint16_t * c1 = &(b->rgb[(int)(((int)(y/scale)*b->w) + x/scale)]);
+
+
+      if(((int)(x/scale) + 1) < b->w && ((int)(y/scale) + 1) < b->h){
+        uint16_t * c2 = &(b->rgb[(int)(((int)(y/scale)*b->w) + (x+1)/scale)]);
+        uint16_t * c3 = &(b->rgb[(int)(((int)((y+1)/scale)*b->w) + x/scale)]);
+        uint16_t * c4 = &(b->rgb[(int)(((int)((y+1)/scale)*b->w) + (x+1)/scale)]);
+        uint16_t color = 0x0;
+        color |= (uint16_t)(((1.0f - diffX)*(0x001F & *c1) + diffX*(0x001F & *c2))*(1.0f - diffY) + diffY*((1.0f - diffX)*(0x001F & *c3) + diffX*(0x001F & *c4))) & 0x001F; // B
+        color |= (uint16_t)(((1.0f - diffX)*(0x07E0 & *c1) + diffX*(0x07E0 & *c2))*(1.0f - diffY) + diffY*((1.0f - diffX)*(0x07E0 & *c3) + diffX*(0x07E0 & *c4))) & 0x07E0; // G
+        color |= (uint16_t)(((1.0f - diffX)*(0xF800 & *c1) + diffX*(0xF800 & *c2))*(1.0f - diffY) + diffY*((1.0f - diffX)*(0xF800 & *c3) + diffX*(0xF800 & *c4))) & 0xF800; // R
+        writeDisplay(color);
+      }
+      else if(((int)(x/scale) + 1) < b->w){
+        uint16_t * c2 = &(b->rgb[(int)(((int)(y/scale)*b->w) + (x+1)/scale)]);
+        uint16_t color = 0x0;
+        color |= (uint16_t)((1.0f - diffX)*(0x001F & *c1) + diffX*(0x001F & *c2)) & 0x001F; // B
+        color |= (uint16_t)((1.0f - diffX)*(0x07E0 & *c1) + diffX*(0x07E0 & *c2)) & 0x07E0; // G
+        color |= (uint16_t)((1.0f - diffX)*(0xF800 & *c1) + diffX*(0xF800 & *c2)) & 0xF800; // R
+        writeDisplay(color);
+      }
+      else {
+        writeDisplay(*c1);
+      }
+    }
+  }
+
+  setWindowDefault();
+}
+
+void __drawBitmap(Bitmap * b, int xI, int yI, float scale){
+  uint16_t xOffset =0;
+  uint16_t yOffset =0;
+  if(xI < 0){
+    xOffset = -xI;
+  }
+  if(yI < 0){
+    yOffset = -yI;
+  }
+
+  uint16_t scaleWidth = b->w*scale;
+  uint16_t scaleHight = b->h*scale;
+
+  if(scaleWidth > SSD1289_WIDTH){
+    scaleWidth = SSD1289_WIDTH;
+  }
+  if(scaleHight > SSD1289_HEIGHT){
+    scaleHight = SSD1289_HEIGHT;
+  }
+
+  setWindow(xI + xOffset,yI + yOffset,scaleWidth - xOffset,scaleHight - yOffset);
+  prepDisplayForWrite();
+
+  for(uint16_t y =yOffset; y < scaleHight; y ++){
+    for(uint16_t x = xOffset; x < scaleWidth; x ++){
+      writeDisplay(b->rgb[(int)((((int)(y/scale))*b->w) + (int)x/scale)]);
     }
   }
 

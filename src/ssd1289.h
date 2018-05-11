@@ -61,13 +61,19 @@ void clearDisplay(uint16_t color);
 /**
   draw bitmap at the given coordinates
 */
-void drawBitmap(Bitmap * b, uint16_t x, uint16_t y);
+void drawBitmap(Bitmap * b, int x, int y);
 
 /**
-  like draw bitmap but with scale option
+  like draw bitmap but with scale option. (using nearist neighbor)
   @see drawBitmap
 */
-void drawBitmapScale(Bitmap * b, uint16_t x, uint16_t y, uint16_t scale);
+void drawBitmapNNScale(Bitmap * b, int x, int y, float scale);
 
+/**
+  like draw bitmap but with scale option (using Linear interpolation).
+  use drawBitmapNNScale for speed, this for quality
+  @see drawBitmapNNScale
+*/
+void drawBitmapLScale(Bitmap * b, int x, int y, float scale);
 
 #endif /*LCD8080_H_*/
