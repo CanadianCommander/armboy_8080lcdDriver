@@ -15,8 +15,8 @@
 #define LCD_HORZ_RAM_ADDR 0x44
 #define LCD_VERT_RAM_START_ADDR 0x45
 #define LCD_VERT_RAM_END_ADDR 0x46
-#define LCD_RAM_ADDR_X 0x4E
-#define LCD_RAM_ADDR_Y 0x4F
+#define LCD_RAM_ADDR_X 0x4F
+#define LCD_RAM_ADDR_Y 0x4E
 /*******************/
 
 static LCDConfig currentConfig;
@@ -259,20 +259,42 @@ void powerOnLCD(){
 
 void clearDisplay(uint16_t color){
   prepDisplayForWrite();
-  for(int y = 0; y < SSD1289_HIGHT; y ++){
+  for(int y = 0; y < SSD1289_HEIGHT; y ++){
     for(int x = 0; x < SSD1289_WIDTH; x ++){
       writeDisplay(color);
     }
   }
 }
 
-
+void __drawBitmap(Bitmap * b, uint16_t x, uint16_t y, uint16_t scale);
 void drawBitmap(Bitmap * b, uint16_t x, uint16_t y){
-  setWindow(x,y,b->w,b->h);
-  prepDisplayForWrite();
+  __drawBitmap(b,x,y,1);
+}
 
-  for(uint16_t i =0; i < (b->w*b->h); i++){
-    writeDisplay(b->rgb[i]);
+void drawBitmapScale(Bitmap * b, uint16_t x, uint16_t y, uint16_t scale){
+  __drawBitmap(b,x,y,scale);
+}
+
+
+void __drawBitmap(Bitmap * b, uint16_t x, uint16_t y, uint16_t scale){
+
+  uint16_t scaleWidth = b->w*scale;
+  uint16_t scaleHight = b->h*scale;
+
+  if(scaleWidth > SSD1289_WIDTH){
+    scaleWidth = SSD1289_WIDTH;
+  }
+  if(scaleHight > SSD1289_HEIGHT){
+    scaleHight = SSD1289_HEIGHT;
+  }
+
+  setWindow(x,y,scaleWidth,scaleHight);
+
+  prepDisplayForWrite();
+  for(uint16_t y =0; y < scaleHight; y ++){
+    for(uint16_t x = 0; x < scaleWidth; x ++){
+      writeDisplay(b->rgb[((y/scale)*b->w) + x/scale]);
+    }
   }
 
   setWindowDefault();

@@ -38,7 +38,7 @@ typedef struct {
 
 
 #define SSD1289_WIDTH 320
-#define SSD1289_HIGHT 240
+#define SSD1289_HEIGHT 240
 #define TRANSPARENT_COLOR 0xFFFF
 
 /**
@@ -62,6 +62,12 @@ void clearDisplay(uint16_t color);
   draw bitmap at the given coordinates
 */
 void drawBitmap(Bitmap * b, uint16_t x, uint16_t y);
+
+/**
+  like draw bitmap but with scale option
+  @see drawBitmap
+*/
+void drawBitmapScale(Bitmap * b, uint16_t x, uint16_t y, uint16_t scale);
 
 
 #endif /*LCD8080_H_*/
