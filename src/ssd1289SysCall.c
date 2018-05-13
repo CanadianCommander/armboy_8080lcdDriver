@@ -9,6 +9,11 @@ void initDefault(void * nop){
   initializeLCDDefault();
 }
 
+void clearDisplayCall(void * color){
+  clearDisplay(*(uint16_t*)color);
+}
+
+
 void drawBitmapCall(void * drawCmd){
   BitmapDraw * bd = (BitmapDraw *)drawCmd;
 
