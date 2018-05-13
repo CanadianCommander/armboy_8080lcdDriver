@@ -2,6 +2,7 @@
 #define LCD8080_H_
 #include "config.h"
 #include "hardware/hardware.h"
+#include "ssd1289SysCall.h"
 
 typedef struct {
   Pin lcdDC;
@@ -30,18 +31,6 @@ typedef struct {
   Pin data15;
 
 } LCDConfig;
-
-typedef struct {
-  uint16_t x;
-  uint16_t y;
-  uint16_t w;
-  uint16_t h;
-} Rectangle;
-
-typedef struct {
-  uint16_t w, h;
-  uint16_t * rgb;
-} Bitmap;
 
 #define SSD1289_WIDTH 320
 #define SSD1289_HEIGHT 240
