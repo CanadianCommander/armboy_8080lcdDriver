@@ -3,7 +3,7 @@ CFLAGS = --std=gnu11 -Ofast  -mlong-calls -fPIC -mno-pic-data-is-text-relative -
 OBYCP = arm-none-eabi-objcopy
 
 INCLUDE = -I ../armboy-kernel/src/ -I ../../../tools/ATMEL -I ../../../tools/CMSIS/include
-CFILES = ssd1289.c
+CFILES = ssd1289.c ssd1289SysCall.c
 
 test.bin : $(CFILES) kmod.S
 	$(CC) $(CFLAGS) -o ssd1289.elf $(CFILES) kmod.S $(INCLUDE)

@@ -32,21 +32,26 @@ typedef struct {
 } LCDConfig;
 
 typedef struct {
+  uint16_t x;
+  uint16_t y;
+  uint16_t w;
+  uint16_t h;
+} Rectangle;
+
+typedef struct {
   uint16_t w, h;
   uint16_t * rgb;
 } Bitmap;
-
 
 #define SSD1289_WIDTH 320
 #define SSD1289_HEIGHT 240
 #define TRANSPARENT_COLOR 0xFFFF
 
 /**
-  configuer lcd for use & clear to black. CALL FIRST
+  configure lcd for use & clear to black. CALL FIRST
 */
 void initializeLCD(LCDConfig lcdConf);
 void initializeLCDDefault();
-
 /**
   power up the LCD controller
 */
@@ -57,6 +62,22 @@ void powerOnLCD();
 */
 void clearDisplay(uint16_t color);
 
+/**
+  every thing outside of this box will not be drawn. you can use this to draw
+  a sub section of a bitmap for example.
+*/
+void setClipRegion(uint16_t x, uint16_t y, uint16_t w, uint16_t h);
+
+/**
+  resets the clipping region to the default (entire window)
+  @see setClipRegion
+*/
+void clearClipRegion();
+
+/**
+  draw rectangle described by r ... thats it
+*/
+void drawRectangle(Rectangle * r, uint16_t color);
 
 /**
   draw bitmap at the given coordinates
@@ -64,7 +85,7 @@ void clearDisplay(uint16_t color);
 void drawBitmap(Bitmap * b, int x, int y);
 
 /**
-  like draw bitmap but with scale option. (using nearist neighbor)
+  like draw bitmap but with scale option. (using nearest neighbor)
   @see drawBitmap
 */
 void drawBitmapNNScale(Bitmap * b, int x, int y, float scale);

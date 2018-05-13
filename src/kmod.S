@@ -22,10 +22,10 @@ __binary_layout:
 __jump_vector:
 
 	/* jump vectors. replace Default_Handler with you handler as required*/
-  .long initializeLCDDefault // 0
-  .long Default_Handler
-  .long Default_Handler
-  .long Default_Handler
+  .long init            // 0
+  .long initDefault
+  .long drawBitmapCall
+  .long drawRectangleCall
   .long Default_Handler
   .long Default_Handler
   .long Default_Handler

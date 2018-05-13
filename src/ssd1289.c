@@ -21,6 +21,8 @@
 
 static LCDConfig currentConfig;
 
+static Rectangle clippingRec = {0,0,320,240};
+
 static uint16_t prevData =0;
 /*******************************************************/
 /************** BIG BLOCK OF IO ABSTRACTION ************/
@@ -120,7 +122,7 @@ inline static void strobe(Pin p){
   SET_PIN_FAST(p,1);
 }
 
-inline static void setRaw(uint8_t control,uint16_t data){
+inline static void setRaw(uint8_t control, uint16_t data){
   setRawData(data);
   setRawControl(control);
 }
@@ -129,7 +131,7 @@ inline static void setRaw(uint8_t control,uint16_t data){
 
 #define WRITE_CONTROL_PINS_REG 0x4 // all low but RST and RD
 inline static void writeCmd(uint16_t data, uint8_t param){
-  setRaw(WRITE_CONTROL_PINS_REG | param,data);
+  setRaw(WRITE_CONTROL_PINS_REG | param, data);
   strobe(currentConfig.lcdWR);
   setRaw(NOP_CONTROL_PINS,0x0);
 }
@@ -147,8 +149,8 @@ inline static void prepDisplayForWrite(){
 
 
 inline static void writeRegister(uint16_t reg, uint16_t val){
-  writeCmd(reg,0);// select register
-  writeCmd(val,1);// write new value
+  writeCmd(reg, 0);// select register
+  writeCmd(val, 1);// write new value
 }
 
 inline static void writeDisplay(uint16_t data){
@@ -171,8 +173,8 @@ inline static void readDisplay(uint16_t * data){
 }
 
 inline static void setWindow(uint16_t x, uint16_t y, uint16_t w, uint16_t h){
-  writeRegister(LCD_RAM_ADDR_X,x);
-  writeRegister(LCD_RAM_ADDR_Y,y);
+  writeRegister(LCD_RAM_ADDR_X, x);
+  writeRegister(LCD_RAM_ADDR_Y, y);
   writeRegister(LCD_HORZ_RAM_ADDR,(0xFF00 & ((y+h - 1)<<8)) | (0x00FF & (y)));
   writeRegister(LCD_VERT_RAM_START_ADDR,0x01FF & (x));
   writeRegister(LCD_VERT_RAM_END_ADDR, 0x01FF & (x + w - 1));
@@ -266,46 +268,66 @@ void clearDisplay(uint16_t color){
   }
 }
 
+void setClipRegion(uint16_t x, uint16_t y, uint16_t w, uint16_t h){
+  clippingRec.x = x;
+  clippingRec.y = y;
+  clippingRec.w = w;
+  clippingRec.h = h;
+}
+
+void clearClipRegion(){
+  clippingRec.x = 0;
+  clippingRec.y = 0;
+  clippingRec.w = 320;
+  clippingRec.h = 240;
+}
+
+
+
+void __drawSetup(Bitmap * b, int xI, int yI, float scale, uint16_t * xOff, uint16_t * yOff, uint16_t * scaleWidth, uint16_t * scaleHeight);
+
+void drawRectangle(Rectangle * r, uint16_t color){
+  uint16_t xOffset =0;
+  uint16_t yOffset =0;
+  uint16_t scaleWidth = 0;
+  uint16_t scaleHeight = 0;
+  Bitmap fake;
+  fake.w = r->w;
+  fake.h = r->h;
+
+  __drawSetup(&fake, r->x, r->y, 1.0, &xOffset, &yOffset, &scaleWidth, &scaleHeight);
+
+  for(uint16_t y = yOffset; y < scaleHeight; y ++){
+    for(uint16_t x = xOffset; x < scaleWidth; x ++){
+      writeDisplay(color);
+    }
+  }
+}
+
 //bitmap helper functions
 void __drawBitmap(Bitmap * b, int xI, int yI, float scale);
 void __drawBitmapL(Bitmap * b, int xI, int yI, float scale);
-
 void drawBitmap(Bitmap * b, int x, int y){
-  __drawBitmap(b,x,y,1);
+  __drawBitmap(b, x, y, 1);
 }
 
 void drawBitmapNNScale(Bitmap * b, int x, int y, float scale){
-  __drawBitmap(b,x,y,scale);
+  __drawBitmap(b, x, y, scale);
 }
 
 void drawBitmapLScale(Bitmap * b, int x, int y, float scale){
-  __drawBitmapL(b,x,y,scale);
+  __drawBitmapL(b, x, y, scale);
 }
 
 void __drawBitmapL(Bitmap * b, int xI, int yI, float scale){
   uint16_t xOffset =0;
   uint16_t yOffset =0;
-  if(xI < 0){
-    xOffset = -xI;
-  }
-  if(yI < 0){
-    yOffset = -yI;
-  }
+  uint16_t scaleWidth = 0;
+  uint16_t scaleHeight = 0;
 
-  uint16_t scaleWidth = b->w*scale;
-  uint16_t scaleHight = b->h*scale;
+  __drawSetup(b, xI, yI, scale, &xOffset, &yOffset, &scaleWidth, &scaleHeight);
 
-  if(scaleWidth > SSD1289_WIDTH){
-    scaleWidth = SSD1289_WIDTH;
-  }
-  if(scaleHight > SSD1289_HEIGHT){
-    scaleHight = SSD1289_HEIGHT;
-  }
-
-  setWindow(xI + xOffset,yI + yOffset,scaleWidth - xOffset,scaleHight - yOffset);
-  prepDisplayForWrite();
-
-  for(float y =yOffset; y < scaleHight; y ++){
+  for(float y =yOffset; y < scaleHeight; y ++){
     for(float x = xOffset; x < scaleWidth; x ++){
       float diffY = y/scale - (int)(y/scale);
 
@@ -343,31 +365,40 @@ void __drawBitmapL(Bitmap * b, int xI, int yI, float scale){
 void __drawBitmap(Bitmap * b, int xI, int yI, float scale){
   uint16_t xOffset =0;
   uint16_t yOffset =0;
-  if(xI < 0){
-    xOffset = -xI;
-  }
-  if(yI < 0){
-    yOffset = -yI;
-  }
+  uint16_t scaleWidth = 0;
+  uint16_t scaleHeight = 0;
 
-  uint16_t scaleWidth = b->w*scale;
-  uint16_t scaleHight = b->h*scale;
+  __drawSetup(b, xI, yI, scale, &xOffset, &yOffset, &scaleWidth, &scaleHeight);
 
-  if(scaleWidth > SSD1289_WIDTH){
-    scaleWidth = SSD1289_WIDTH;
-  }
-  if(scaleHight > SSD1289_HEIGHT){
-    scaleHight = SSD1289_HEIGHT;
-  }
-
-  setWindow(xI + xOffset,yI + yOffset,scaleWidth - xOffset,scaleHight - yOffset);
-  prepDisplayForWrite();
-
-  for(uint16_t y =yOffset; y < scaleHight; y ++){
+  for(uint16_t y =yOffset; y < scaleHeight; y ++){
     for(uint16_t x = xOffset; x < scaleWidth; x ++){
       writeDisplay(b->rgb[(int)((((int)(y/scale))*b->w) + (int)x/scale)]);
     }
   }
 
   setWindowDefault();
+}
+
+void __drawSetup(Bitmap * b, int xI, int yI, float scale, uint16_t * xOff, uint16_t * yOff, uint16_t * scaleWidth, uint16_t * scaleHeight){
+  *xOff = 0;
+  *yOff = 0;
+  if(xI < clippingRec.x){
+    *xOff = -(xI - clippingRec.x);
+  }
+  if(yI < clippingRec.y){
+    *yOff = -(yI - clippingRec.y);
+  }
+
+  *scaleWidth = b->w*scale;
+  *scaleHeight = b->h*scale;
+
+  if(xI + *scaleWidth > clippingRec.x + clippingRec.w){
+    *scaleWidth = clippingRec.w - ((xI + *xOff) - clippingRec.x);
+  }
+  if(yI + *scaleHeight > clippingRec.y + clippingRec.h){
+    *scaleHeight = clippingRec.h - ((yI + *yOff) - clippingRec.y);
+  }
+
+  setWindow(xI + *xOff, yI + *yOff, *scaleWidth - *xOff, *scaleHeight - *yOff);
+  prepDisplayForWrite();
 }
