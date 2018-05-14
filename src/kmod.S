@@ -98,4 +98,4 @@ Default_Handler:
   .section .module_name
 __module_name:
   padded_string "lcd driver", 60 @ module name
-  .long 0x00000042 @ module ID
+  .long 0x00000001 @ module ID
