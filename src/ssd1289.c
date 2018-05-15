@@ -382,6 +382,14 @@ void __drawBitmap(Bitmap * b, int xI, int yI, float scale){
 void __drawSetup(Bitmap * b, int xI, int yI, float scale, uint16_t * xOff, uint16_t * yOff, uint16_t * scaleWidth, uint16_t * scaleHeight){
   *xOff = 0;
   *yOff = 0;
+
+  if(xI > (clippingRec.x + clippingRec.w) || yI > (clippingRec.y + clippingRec.h)){
+    *scaleWidth =0;
+    *scaleHeight = 0;
+    //early abort
+    return;
+  }
+
   if(xI < clippingRec.x){
     *xOff = -(xI - clippingRec.x);
   }
@@ -393,10 +401,10 @@ void __drawSetup(Bitmap * b, int xI, int yI, float scale, uint16_t * xOff, uint1
   *scaleHeight = b->h*scale;
 
   if(xI + *scaleWidth > clippingRec.x + clippingRec.w){
-    *scaleWidth = clippingRec.w - ((xI + *xOff) - clippingRec.x);
+    *scaleWidth -= (xI + *scaleWidth) - (clippingRec.x + clippingRec.w);
   }
   if(yI + *scaleHeight > clippingRec.y + clippingRec.h){
-    *scaleHeight = clippingRec.h - ((yI + *yOff) - clippingRec.y);
+    *scaleHeight -= (yI + *scaleHeight) - (clippingRec.y + clippingRec.h);
   }
 
   setWindow(xI + *xOff, yI + *yOff, *scaleWidth - *xOff, *scaleHeight - *yOff);
