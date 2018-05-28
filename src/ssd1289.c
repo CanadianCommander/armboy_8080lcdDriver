@@ -223,7 +223,7 @@ void initializeLCDDefault(){
 
   enableAllIOBanks();
   enablePin(PIO_BANK_C, PIO_PC23 | PIO_PC24 | PIO_PC25 | PIO_PC26 | PIO_PC7  |
-                        PIO_PC29 | PIO_PC4  | PIO_PC6  | PIO_PC8  | PIO_PC16 | PIO_PC9 |
+                        PIO_PC4  | PIO_PC6  | PIO_PC8  | PIO_PC16 | PIO_PC9 |
                         PIO_PC12 | PIO_PC17 | PIO_PC15 | PIO_PC13 | PIO_PC5 | PIO_PC14 , PIO_OUT);
   enablePin(PIO_BANK_A, PIO_PA20 | PIO_PA19, PIO_OUT);
   enablePin(PIO_BANK_B, PIO_PB25 | PIO_PB14 | PIO_PB21, PIO_OUT);
