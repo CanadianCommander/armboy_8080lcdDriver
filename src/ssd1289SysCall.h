@@ -18,8 +18,8 @@ typedef struct {
 #define BITMAP_DRAW_MODE_L  1
 typedef struct {
   Bitmap * b;
-  uint16_t x;
-  uint16_t y;
+  int x;
+  int y;
   float scale;
   uint8_t mode;
 } BitmapDraw;
