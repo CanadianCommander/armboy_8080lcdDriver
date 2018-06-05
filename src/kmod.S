@@ -27,8 +27,8 @@ __jump_vector:
   .long clearDisplayCall
   .long drawBitmapCall
   .long drawRectangleCall
-  .long Default_Handler
-  .long Default_Handler
+  .long setClipRegionCall
+  .long clearClipRegionCall
   .long Default_Handler
   .long Default_Handler
   .long Default_Handler // 10

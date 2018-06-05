@@ -33,3 +33,13 @@ void drawRectangleCall(void * recCmd){
   RectangleDraw * rd = (RectangleDraw*)recCmd;
   drawRectangle(rd->r, rd->color);
 }
+
+
+void setClipRegionCall(void * arg){
+  SetClipRegionCall * scr = (SetClipRegionCall*)arg;
+  setClipRegion(scr->x, scr->y, scr->w, scr->h);
+}
+
+void clearClipRegionCall(void * arg){
+  clearClipRegion();
+}

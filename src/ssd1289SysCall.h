@@ -29,5 +29,10 @@ typedef struct {
   uint16_t color;
 } RectangleDraw;
 
+typedef struct{
+  uint16_t x, y;
+  uint16_t w, h;
+} SetClipRegionCall;
+
 
 #endif /*SSD1289_SYSCALL_H_*/
